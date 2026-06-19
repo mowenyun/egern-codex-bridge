@@ -1,0 +1,11 @@
+#!name=SharedChat Codex Bridge v5 Minis Tools
+#!desc=SharedChat 专用桥接模块 v5：保留 Minis 原生工具（shell_execute/file_read/browser_use 等），只改 /codex/responses 路径、codex-tui 头、多轮 input schema、client_metadata。GitHub Raw 稳定版。
+#!author=星
+#!homepage=https://github.com/mowenyun/egern-codex-bridge
+#!icon=https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/OpenAI.png
+
+[Script]
+sharedchat-codex-bridge-v5-minis-tools = type=http-request,pattern=^https?://new\.sharedchat\.cc/(v1/(responses|chat/completions)|codex/responses)(\?.*)?$,requires-body=true,script-path=https://raw.githubusercontent.com/mowenyun/egern-codex-bridge/main/egern/sharedchat-codex-bridge-v5-minis-tools.js
+
+[MITM]
+hostname = new.sharedchat.cc
