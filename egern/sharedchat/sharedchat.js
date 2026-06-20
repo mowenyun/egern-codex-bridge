@@ -1,4 +1,4 @@
-// SharedChat Codex Bridge v5 for Egern
+// SharedChat Codex Bridge for Egern
 // 原生 Minis 工具版：保留 Minis 原始 tools（shell_execute/file_read/...），不再替换成 Codex 工具。
 // 只做：路径 /codex/responses、codex-tui 头、input 多轮 schema 修复、非 message 项清洗、client_metadata 补齐。
 
@@ -71,13 +71,27 @@ function minimalInstructions(original) {
 
 function normalizeTools(originalTools) {
   const tools = ensureArray(originalTools);
-  // v5 核心：保留 Minis 原生 tools，不替换成 Codex tools
-  // 只做极轻量兜底，确保 function tool 有 name/parameters
+  // 保留 Minis 原生 tools，但兼容 Chat Completions / Responses 两种函数工具形态。
   return tools.map(t => {
-    if (!t || typeof t !== 'object') return t;
+    if (!t || typeof t !== 'object') return null;
     const x = Object.assign({}, t);
+
+    // Chat Completions: {type:'function', function:{name,description,parameters}}
+    if (x.type === 'function' && x.function && typeof x.function === 'object') {
+      const f = x.function;
+      x.name = x.name || f.name;
+      x.description = x.description || f.description || '';
+      x.parameters = x.parameters || f.parameters || { type: 'object', properties: {} };
+      delete x.function;
+    }
+
+    // Responses-style custom function tool
     if (!x.type) x.type = 'function';
     if (x.type === 'function') {
+      if (x.input_schema && !x.parameters) x.parameters = x.input_schema;
+      delete x.input_schema;
+      if (!x.name) return null;
+      if (!x.description) x.description = '';
       if (!x.parameters) x.parameters = { type: 'object', properties: {} };
       if (x.strict === undefined) x.strict = false;
     }
@@ -181,7 +195,8 @@ function buildCodexBody(original, ids) {
   try { bodyObj = JSON.parse(req.body || '{}'); } catch (e) { bodyObj = {}; }
   const newBody = buildCodexBody(bodyObj, { sessionId, turnId, installationId, turnStartedAt });
   const bodyText = JSON.stringify(newBody);
-  headers['content-length'] = String(bodyText.length);
+  delete headers['content-length'];
+  delete headers['Content-Length'];
 
   $done({ url, headers, body: bodyText });
 })();
