@@ -10,6 +10,11 @@ function uuidv7Like() {
 }
 
 function ensureArray(v) { return Array.isArray(v) ? v : []; }
+function stringifyValue(v, fallback) {
+  if (typeof v === 'string') return v;
+  if (v === undefined || v === null) return fallback || '';
+  try { return JSON.stringify(v); } catch (e) { return String(v); }
+}
 function extractText(x) {
   if (typeof x === 'string') return x;
   if (!x || typeof x !== 'object') return '';
@@ -24,44 +29,133 @@ function roleContentType(role, origType) {
   if (role === 'assistant') return origType === 'refusal' ? 'refusal' : 'output_text';
   return 'input_text';
 }
-function normalizeContent(role, content) {
-  const arr = Array.isArray(content) ? content : [content];
-  const out = [];
-  for (const c of arr) {
-    const type = roleContentType(role, c && c.type);
-    const text = extractText(c);
-    if (type === 'refusal') out.push({ type: 'refusal', refusal: text });
-    else out.push({ type, text });
+function pushTextBlock(out, role, c) {
+  const type = roleContentType(role, c && c.type);
+  const text = extractText(c);
+  if (!text) return;
+  if (type === 'refusal') out.push({ type: 'refusal', refusal: text });
+  else out.push({ type, text });
+}
+function normalizeToolOutput(output) {
+  if (typeof output === 'string') return output;
+  if (Array.isArray(output)) {
+    return output.map(part => {
+      if (typeof part === 'string') return part;
+      if (!part || typeof part !== 'object') return '';
+      if (Array.isArray(part.content)) return normalizeToolOutput(part.content);
+      return extractText(part) || stringifyValue(part, '');
+    }).filter(Boolean).join('\n');
   }
-  return out.length ? out : [{ type: role === 'assistant' ? 'output_text' : 'input_text', text: '' }];
+  if (!output || typeof output !== 'object') return extractText(output);
+  if (Array.isArray(output.content)) return normalizeToolOutput(output.content);
+  return extractText(output) || stringifyValue(output, '');
 }
 function toMessage(role, text) {
   return { type: 'message', role, content: [{ type: role === 'assistant' ? 'output_text' : 'input_text', text: text || '' }] };
 }
+function normalizeRoleContent(role, content) {
+  const arr = Array.isArray(content) ? content : [content];
+  const out = [];
+  let textBlocks = [];
+  function flushText() {
+    if (!textBlocks.length) return;
+    out.push({ type: 'message', role, content: textBlocks });
+    textBlocks = [];
+  }
+  for (const c of arr) {
+    if (role === 'assistant' && c && typeof c === 'object' && (c.type === 'tool_use' || c.type === 'server_tool_use')) {
+      flushText();
+      out.push({
+        type: 'function_call',
+        call_id: c.id || c.tool_use_id || uuidv7Like(),
+        name: c.name || c.tool_name || 'tool',
+        arguments: stringifyValue(c.input !== undefined ? c.input : c.arguments, '{}')
+      });
+      continue;
+    }
+    if (role === 'user' && c && typeof c === 'object' && (c.type === 'tool_result' || c.type === 'server_tool_result')) {
+      flushText();
+      out.push({
+        type: 'function_call_output',
+        call_id: c.tool_use_id || c.call_id || c.id || uuidv7Like(),
+        output: normalizeToolOutput(c.output !== undefined ? c.output : c.content)
+      });
+      continue;
+    }
+    pushTextBlock(textBlocks, role, c);
+  }
+  flushText();
+  return out.length ? out : [toMessage(role, '')];
+}
 function normalizeInputItem(item) {
-  if (!item || typeof item !== 'object') return toMessage('user', extractText(item));
+  if (!item || typeof item !== 'object') return [toMessage('user', extractText(item))];
   const itemType = item.type;
   const role = item.role;
+
+  // Chat Completions history: assistant tool_calls + tool messages
+  if (role === 'assistant' && Array.isArray(item.tool_calls) && item.tool_calls.length) {
+    const out = [];
+    const textItems = normalizeRoleContent('assistant', item.content);
+    for (const x of textItems) {
+      if (x && !(x.type === 'message' && (!x.content || !x.content.length || !extractText(x.content[0])))) out.push(x);
+    }
+    for (const tc of item.tool_calls) {
+      if (!tc || typeof tc !== 'object') continue;
+      const fn = tc.function && typeof tc.function === 'object' ? tc.function : tc;
+      const name = fn.name || tc.name || 'tool';
+      out.push({
+        type: 'function_call',
+        call_id: tc.id || item.call_id || uuidv7Like(),
+        name,
+        arguments: stringifyValue(fn.arguments !== undefined ? fn.arguments : tc.arguments, '{}')
+      });
+    }
+    return out.length ? out : [toMessage('assistant', '')];
+  }
+
+  if (role === 'tool') {
+    return [{
+      type: 'function_call_output',
+      call_id: item.tool_call_id || item.call_id || item.id || uuidv7Like(),
+      output: normalizeToolOutput(item.output !== undefined ? item.output : item.content)
+    }];
+  }
+
+  if (itemType === 'reasoning') {
+    return [toMessage('assistant', flattenSummary(item.summary) || extractText(item) || '[reasoning]')];
+  }
+
+  if (itemType === 'function_call' || itemType === 'tool_call') {
+    return [{
+      type: 'function_call',
+      call_id: item.call_id || item.id || uuidv7Like(),
+      name: item.name || item.tool_name || 'tool',
+      arguments: stringifyValue(item.arguments !== undefined ? item.arguments : item.input, '{}')
+    }];
+  }
+
+  if (itemType === 'function_call_output' || itemType === 'tool_result') {
+    return [{
+      type: 'function_call_output',
+      call_id: item.call_id || item.tool_call_id || item.tool_use_id || item.id || uuidv7Like(),
+      output: normalizeToolOutput(item.output !== undefined ? item.output : item.content)
+    }];
+  }
+
   if (!itemType || itemType === 'message' || role || item.content) {
     const finalRole = role || 'user';
-    return { type: 'message', role: finalRole, content: normalizeContent(finalRole, item.content) };
+    return normalizeRoleContent(finalRole, item.content);
   }
-  if (itemType === 'reasoning') {
-    return toMessage('assistant', flattenSummary(item.summary) || extractText(item) || '[reasoning]');
-  }
-  if (itemType === 'function_call' || itemType === 'tool_call' || itemType === 'computer_call' || itemType === 'web_search_call') {
-    const name = item.name || item.tool_name || itemType;
-    const args = item.arguments || item.input || '';
-    return toMessage('assistant', `[${itemType}:${name}] ${typeof args === 'string' ? args : JSON.stringify(args)}`);
-  }
-  if (itemType === 'function_call_output' || itemType === 'tool_result' || itemType === 'computer_call_output' || itemType === 'web_search_result') {
-    const text = extractText(item.output) || extractText(item.content) || extractText(item) || `[${itemType}]`;
-    return toMessage('user', text);
-  }
-  return toMessage('user', extractText(item) || `[${itemType || 'unknown'}]`);
+
+  return [toMessage('user', extractText(item) || `[${itemType || 'unknown'}]`)];
 }
 function normalizeInput(messagesOrInput) {
-  return ensureArray(messagesOrInput).map(normalizeInputItem).filter(Boolean);
+  const out = [];
+  for (const item of ensureArray(messagesOrInput)) {
+    const pieces = normalizeInputItem(item);
+    for (const piece of ensureArray(pieces)) if (piece) out.push(piece);
+  }
+  return out;
 }
 
 function minimalInstructions(original) {
@@ -113,7 +207,7 @@ function buildCodexBody(original, ids) {
   const hasEnv = input.some(x => JSON.stringify(x).includes('<environment_context>'));
   const out = [];
   if (!hasDeveloper) {
-    out.push({ type: 'message', role: 'developer', content: [{ type: 'input_text', text: '<permissions instructions> Tool-enabled session. Use available tools when needed.' }] });
+    out.push({ type: 'message', role: 'developer', content: [{ type: 'input_text', text: '<permissions instructions> Tool-enabled session. Use available tools when needed. When you decide to use a tool, emit structured function calls only; never print pseudo tool syntax like [function_call:tool] or raw JSON arguments as normal assistant text.' }] });
   }
   if (!hasEnv) {
     out.push({ type: 'message', role: 'user', content: [{ type: 'input_text', text: `<environment_context>\n<cwd>/</cwd>\n<shell>unknown</shell>\n<current_date>${new Date().toISOString().slice(0,10)}</current_date>\n<timezone>Asia/Shanghai</timezone>\n</environment_context>` }] });
