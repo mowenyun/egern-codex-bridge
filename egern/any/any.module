@@ -1,0 +1,11 @@
+#!name=Any Claude Auth Fix
+#!desc=修复 Minis Claude 模式访问 Any/fcapp 模型列表时只带 x-api-key 导致 401 的问题：动态复制 x-api-key 为 Authorization: Bearer，不写死密钥。
+#!author=星
+#!homepage=https://github.com/mowenyun/egern-codex-bridge
+#!icon=https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Claude.png
+
+[Script]
+any-auth = type=http-request,pattern=^https?://a-ocnfniawgw\.cn-shanghai\.fcapp\.run/v1/,requires-body=false,script-path=https://raw.githubusercontent.com/mowenyun/egern-codex-bridge/main/egern/any/any.js
+
+[MITM]
+hostname = a-ocnfniawgw.cn-shanghai.fcapp.run
