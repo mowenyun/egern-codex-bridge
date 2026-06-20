@@ -1,11 +1,11 @@
-#!name=Codex TUI Header Spoof for Muyuan & Any
-#!desc=将 Minis/iOS 请求头伪装成 Codex TUI 0.141.0，用于 muyuan.do 与 fcapp.run / Any 中转站。注意：本模块只改请求头，不把 /v1/chat/completions 转成 /v1/responses，也不改 body。
+#!name=Codex TUI Header Spoof for Muyuan
+#!desc=仅用于 muyuan.do 的 Codex TUI 头伪装；只改请求头，不把 /v1/chat/completions 转成 /v1/responses，也不改 body；不再覆盖 fcapp/Any 站点。
 #!author=星
 #!homepage=https://muyuan.do
 #!icon=https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/OpenAI.png
 
 [Rewrite]
-# ===== Muyuan: https://muyuan.do/v1/* =====
+# ===== Muyuan only: https://muyuan.do/v1/* =====
 # 删除 Minis / iOS / 浏览器特征
 ^https?://muyuan\.do/v1/ header-del User-Agent
 ^https?://muyuan\.do/v1/ header-del user-agent
@@ -37,37 +37,5 @@
 ^https?://muyuan\.do/v1/ header-add x-codex-window-id "019edf10-37a9-7e83-b972-e6f93c16a657:0"
 ^https?://muyuan\.do/v1/ header-add x-codex-turn-metadata "{\"installation_id\":\"96801c72-d496-4702-b685-b69ce0765c68\",\"session_id\":\"019edf10-37a9-7e83-b972-e6f93c16a657\",\"thread_id\":\"019edf10-37a9-7e83-b972-e6f93c16a657\",\"turn_id\":\"019edf10-4ad7-7db2-ba09-9ff5c5039c30\",\"window_id\":\"019edf10-37a9-7e83-b972-e6f93c16a657:0\",\"request_kind\":\"turn\",\"sandbox\":\"none\",\"turn_started_at_unix_ms\":1781858847449}"
 
-# ===== Any / fcapp.run: https://*.fcapp.run/v1/* =====
-# 删除 Minis / iOS / 浏览器特征与边缘 Cookie
-^https?://.*\.fcapp\.run/v1/ header-del User-Agent
-^https?://.*\.fcapp\.run/v1/ header-del user-agent
-^https?://.*\.fcapp\.run/v1/ header-del Accept
-^https?://.*\.fcapp\.run/v1/ header-del accept
-^https?://.*\.fcapp\.run/v1/ header-del Accept-Language
-^https?://.*\.fcapp\.run/v1/ header-del accept-language
-^https?://.*\.fcapp\.run/v1/ header-del Priority
-^https?://.*\.fcapp\.run/v1/ header-del priority
-^https?://.*\.fcapp\.run/v1/ header-del Accept-Encoding
-^https?://.*\.fcapp\.run/v1/ header-del accept-encoding
-^https?://.*\.fcapp\.run/v1/ header-del Origin
-^https?://.*\.fcapp\.run/v1/ header-del origin
-^https?://.*\.fcapp\.run/v1/ header-del Referer
-^https?://.*\.fcapp\.run/v1/ header-del referer
-^https?://.*\.fcapp\.run/v1/ header-del Cookie
-^https?://.*\.fcapp\.run/v1/ header-del cookie
-
-# 设置 Codex TUI 基础头
-^https?://.*\.fcapp\.run/v1/ header-add Accept "text/event-stream"
-^https?://.*\.fcapp\.run/v1/ header-add User-Agent "codex-tui/0.141.0 (Ubuntu 24.4.0; aarch64) xterm-256color (codex-tui; 0.141.0)"
-^https?://.*\.fcapp\.run/v1/ header-add originator "codex-tui"
-^https?://.*\.fcapp\.run/v1/ header-add x-codex-beta-features "remote_compaction_v2"
-
-# 静态会话指纹，来自刚才 fcapp55 抓包
-^https?://.*\.fcapp\.run/v1/ header-add x-client-request-id "019edf02-7f2b-72a2-90b2-5a27213da818"
-^https?://.*\.fcapp\.run/v1/ header-add session-id "019edf02-7f2b-72a2-90b2-5a27213da818"
-^https?://.*\.fcapp\.run/v1/ header-add thread-id "019edf02-7f2b-72a2-90b2-5a27213da818"
-^https?://.*\.fcapp\.run/v1/ header-add x-codex-window-id "019edf02-7f2b-72a2-90b2-5a27213da818:0"
-^https?://.*\.fcapp\.run/v1/ header-add x-codex-turn-metadata "{\"installation_id\":\"96801c72-d496-4702-b685-b69ce0765c68\",\"session_id\":\"019edf02-7f2b-72a2-90b2-5a27213da818\",\"thread_id\":\"019edf02-7f2b-72a2-90b2-5a27213da818\",\"turn_id\":\"019edf02-8ddf-71c3-ab14-0dcd8a2036e4\",\"window_id\":\"019edf02-7f2b-72a2-90b2-5a27213da818:0\",\"request_kind\":\"turn\",\"sandbox\":\"none\",\"turn_started_at_unix_ms\":1781857947105}"
-
 [MITM]
-hostname = muyuan.do, *.fcapp.run, a-ocnfniawgw.cn-shanghai.fcapp.run
+hostname = muyuan.do
