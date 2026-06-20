@@ -1,11 +1,11 @@
-#!name=Any Claude Fix
-#!desc=修复 Minis Claude 模式访问 Any/fcapp/anyrouter：动态复制 x-api-key 为 Authorization: Bearer，并为 /v1/messages 补 1m context beta。
+#!name=Any Claude Auth Fix (Safe Coexist)
+#!desc=仅修复 Any/fcapp/anyrouter 的认证：动态同步 x-api-key 与 Authorization；不注入 1m/CLI 伪装；只匹配 /v1/models 和 /v1/messages，避免与同站点 Codex /v1/responses 冲突。
 #!author=星
 #!homepage=https://github.com/mowenyun/egern-codex-bridge
 #!icon=https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Claude.png
 
 [Script]
-any-auth = type=http-request,pattern=^https?://(a-ocnfniawgw\.cn-shanghai\.fcapp\.run|anyrouter\.top)/v1/,requires-body=false,script-path=https://raw.githubusercontent.com/mowenyun/egern-codex-bridge/main/egern/any/any.js
+any-auth = type=http-request,pattern=^https?://(a-ocnfniawgw\.cn-shanghai\.fcapp\.run|anyrouter\.top)/v1/(models|messages)(\?.*)?$,requires-body=false,script-path=https://raw.githubusercontent.com/mowenyun/egern-codex-bridge/main/egern/any/any.js
 
 [MITM]
 hostname = a-ocnfniawgw.cn-shanghai.fcapp.run, anyrouter.top
