@@ -1,5 +1,5 @@
 #!name=Any Unified Codex + Claude
-#!desc=同站点统一模块：/v1/responses 与 /v1/chat/completions 走 Codex 伪装，/v1/messages 与 /v1/models 走 Claude/auth；自动同步 x-api-key 与 Authorization，并清理跨协议污染头。
+#!desc=同站点统一模块：/v1/responses 与 /v1/chat/completions 走 Codex 伪装；/v1/messages 走 Claude Code 成功链路伪装（补 beta=true、anthropic-beta、x-app、X-Stainless-*）；/v1/models 只做 Claude/auth；自动同步 x-api-key 与 Authorization，并清理跨协议污染头。
 #!author=星
 #!homepage=https://github.com/mowenyun/egern-codex-bridge
 #!icon=https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/AISet.png
