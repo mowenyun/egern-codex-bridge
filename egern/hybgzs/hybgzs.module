@@ -1,0 +1,48 @@
+#!name=Claude Code Spoof for Hybgzs (黑与白)
+#!desc=把 Minis/iOS 等客户端请求伪装成 Claude Code SDK；仅作用于 ai.hybgzs.com 的 /claude/v1/ 接口，不影响其它站点。
+#!author=星
+#!homepage=https://ai.hybgzs.com
+#!icon=https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Claude.png
+
+[Rewrite]
+# ===== Hybgzs (黑与白) Claude Code SDK spoof: https://ai.hybgzs.com/claude/v1/* =====
+# 删除 Minis / iOS / 浏览器特征
+^https?://ai\.hybgzs\.com/claude/v1/ header-del priority
+^https?://ai\.hybgzs\.com/claude/v1/ header-del Priority
+^https?://ai\.hybgzs\.com/claude/v1/ header-del upload-draft-interop-version
+^https?://ai\.hybgzs\.com/claude/v1/ header-del upload-complete
+^https?://ai\.hybgzs\.com/claude/v1/ header-del accept-language
+^https?://ai\.hybgzs\.com/claude/v1/ header-del Accept-Language
+
+# 覆盖基础请求头
+^https?://ai\.hybgzs\.com/claude/v1/ header-del Accept
+^https?://ai\.hybgzs\.com/claude/v1/ header-del accept
+^https?://ai\.hybgzs\.com/claude/v1/ header-add Accept "application/json"
+^https?://ai\.hybgzs\.com/claude/v1/ header-del Accept-Encoding
+^https?://ai\.hybgzs\.com/claude/v1/ header-del accept-encoding
+^https?://ai\.hybgzs\.com/claude/v1/ header-add Accept-Encoding "gzip, deflate, br, zstd"
+
+# 设置 Claude Code SDK 指纹
+^https?://ai\.hybgzs\.com/claude/v1/ header-del User-Agent
+^https?://ai\.hybgzs\.com/claude/v1/ header-del user-agent
+^https?://ai\.hybgzs\.com/claude/v1/ header-add User-Agent "claude-cli/2.1.177 (external, sdk-cli)"
+^https?://ai\.hybgzs\.com/claude/v1/ header-del x-app
+^https?://ai\.hybgzs\.com/claude/v1/ header-del X-App
+^https?://ai\.hybgzs\.com/claude/v1/ header-add x-app "cli"
+^https?://ai\.hybgzs\.com/claude/v1/ header-add X-Stainless-Arch "arm64"
+^https?://ai\.hybgzs\.com/claude/v1/ header-add X-Stainless-Lang "js"
+^https?://ai\.hybgzs\.com/claude/v1/ header-add X-Stainless-OS "Linux"
+^https?://ai\.hybgzs\.com/claude/v1/ header-add X-Stainless-Package-Version "0.94.0"
+^https?://ai\.hybgzs\.com/claude/v1/ header-add X-Stainless-Retry-Count "0"
+^https?://ai\.hybgzs\.com/claude/v1/ header-add X-Stainless-Runtime "node"
+^https?://ai\.hybgzs\.com/claude/v1/ header-add X-Stainless-Runtime-Version "v24.3.0"
+^https?://ai\.hybgzs\.com/claude/v1/ header-add X-Stainless-Timeout "600"
+
+# Anthropic / Claude Code beta 头
+^https?://ai\.hybgzs\.com/claude/v1/ header-del anthropic-beta
+^https?://ai\.hybgzs\.com/claude/v1/ header-add anthropic-beta "claude-code-20250219,context-1m-2025-08-07,interleaved-thinking-2025-05-14,thinking-token-count-2026-05-13,context-management-2025-06-27,prompt-caching-scope-2026-01-05,mid-conversation-system-2026-04-07,advisor-tool-2026-03-01,effort-2025-11-24,structured-outputs-2025-12-15"
+^https?://ai\.hybgzs\.com/claude/v1/ header-del anthropic-dangerous-direct-browser-access
+^https?://ai\.hybgzs\.com/claude/v1/ header-add anthropic-dangerous-direct-browser-access "true"
+
+[MITM]
+hostname = ai.hybgzs.com
