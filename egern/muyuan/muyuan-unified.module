@@ -1,0 +1,102 @@
+#!name=Muyuan Unified Codex + Claude
+#!desc=同站点 muyuan.do 统一模块：/v1/responses 与 /v1/chat/completions 走 Codex TUI 伪装；/v1/messages 走 Claude Code SDK 伪装（补 anthropic-beta、x-app、X-Stainless-*）；/v1/models 只做认证同步；不污染其它站点。
+#!author=星
+#!homepage=https://muyuan.do
+#!icon=https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/AISet.png
+
+[Rewrite]
+# ===== Codex path: https://muyuan.do/v1/responses and /v1/chat/completions =====
+# 删除 Minis / iOS / 浏览器特征
+^https?://muyuan\.do/v1/responses header-del User-Agent
+^https?://muyuan\.do/v1/responses header-del user-agent
+^https?://muyuan\.do/v1/responses header-del Accept
+^https?://muyuan\.do/v1/responses header-del accept
+^https?://muyuan\.do/v1/responses header-del Accept-Language
+^https?://muyuan\.do/v1/responses header-del accept-language
+^https?://muyuan\.do/v1/responses header-del Priority
+^https?://muyuan\.do/v1/responses header-del priority
+^https?://muyuan\.do/v1/responses header-del upload-draft-interop-version
+^https?://muyuan\.do/v1/responses header-del upload-complete
+^https?://muyuan\.do/v1/responses header-del Origin
+^https?://muyuan\.do/v1/responses header-del origin
+^https?://muyuan\.do/v1/responses header-del Referer
+^https?://muyuan\.do/v1/responses header-del referer
+
+^https?://muyuan\.do/v1/chat/completions header-del User-Agent
+^https?://muyuan\.do/v1/chat/completions header-del user-agent
+^https?://muyuan\.do/v1/chat/completions header-del Accept
+^https?://muyuan\.do/v1/chat/completions header-del accept
+^https?://muyuan\.do/v1/chat/completions header-del Accept-Language
+^https?://muyuan\.do/v1/chat/completions header-del accept-language
+^https?://muyuan\.do/v1/chat/completions header-del Priority
+^https?://muyuan\.do/v1/chat/completions header-del priority
+^https?://muyuan\.do/v1/chat/completions header-del upload-draft-interop-version
+^https?://muyuan\.do/v1/chat/completions header-del upload-complete
+^https?://muyuan\.do/v1/chat/completions header-del Origin
+^https?://muyuan\.do/v1/chat/completions header-del origin
+^https?://muyuan\.do/v1/chat/completions header-del Referer
+^https?://muyuan\.do/v1/chat/completions header-del referer
+
+# Codex TUI 基础指纹
+^https?://muyuan\.do/v1/responses header-add Accept "text/event-stream"
+^https?://muyuan\.do/v1/responses header-add User-Agent "codex-tui/0.141.0 (Ubuntu 24.4.0; aarch64) xterm-256color (codex-tui; 0.141.0)"
+^https?://muyuan\.do/v1/responses header-add originator "codex-tui"
+^https?://muyuan\.do/v1/responses header-add x-codex-beta-features "remote_compaction_v2"
+
+^https?://muyuan\.do/v1/chat/completions header-add Accept "text/event-stream"
+^https?://muyuan\.do/v1/chat/completions header-add User-Agent "codex-tui/0.141.0 (Ubuntu 24.4.0; aarch64) xterm-256color (codex-tui; 0.141.0)"
+^https?://muyuan\.do/v1/chat/completions header-add originator "codex-tui"
+^https?://muyuan\.do/v1/chat/completions header-add x-codex-beta-features "remote_compaction_v2"
+
+# ===== Claude path: https://muyuan.do/v1/messages =====
+# 删除 Minis / iOS / 浏览器特征
+^https?://muyuan\.do/v1/messages header-del priority
+^https?://muyuan\.do/v1/messages header-del Priority
+^https?://muyuan\.do/v1/messages header-del upload-draft-interop-version
+^https?://muyuan\.do/v1/messages header-del upload-complete
+^https?://muyuan\.do/v1/messages header-del accept-language
+^https?://muyuan\.do/v1/messages header-del Accept-Language
+^https?://muyuan\.do/v1/messages header-del originator
+^https?://muyuan\.do/v1/messages header-del Originator
+^https?://muyuan\.do/v1/messages header-del x-codex-beta-features
+^https?://muyuan\.do/v1/messages header-del X-Codex-Beta-Features
+^https?://muyuan\.do/v1/messages header-del session-id
+^https?://muyuan\.do/v1/messages header-del thread-id
+^https?://muyuan\.do/v1/messages header-del x-codex-window-id
+^https?://muyuan\.do/v1/messages header-del x-codex-turn-metadata
+^https?://muyuan\.do/v1/messages header-del x-client-request-id
+^https?://muyuan\.do/v1/messages header-del cookie
+^https?://muyuan\.do/v1/messages header-del Cookie
+
+# 覆盖基础请求头
+^https?://muyuan\.do/v1/messages header-del Accept
+^https?://muyuan\.do/v1/messages header-del accept
+^https?://muyuan\.do/v1/messages header-add Accept "application/json"
+^https?://muyuan\.do/v1/messages header-del Accept-Encoding
+^https?://muyuan\.do/v1/messages header-del accept-encoding
+^https?://muyuan\.do/v1/messages header-add Accept-Encoding "gzip, deflate, br, zstd"
+
+# 设置 Claude Code SDK 指纹
+^https?://muyuan\.do/v1/messages header-del User-Agent
+^https?://muyuan\.do/v1/messages header-del user-agent
+^https?://muyuan\.do/v1/messages header-add User-Agent "claude-cli/2.1.177 (external, sdk-cli)"
+^https?://muyuan\.do/v1/messages header-del x-app
+^https?://muyuan\.do/v1/messages header-del X-App
+^https?://muyuan\.do/v1/messages header-add x-app "cli"
+^https?://muyuan\.do/v1/messages header-add X-Stainless-Arch "arm64"
+^https?://muyuan\.do/v1/messages header-add X-Stainless-Lang "js"
+^https?://muyuan\.do/v1/messages header-add X-Stainless-OS "Linux"
+^https?://muyuan\.do/v1/messages header-add X-Stainless-Package-Version "0.94.0"
+^https?://muyuan\.do/v1/messages header-add X-Stainless-Retry-Count "0"
+^https?://muyuan\.do/v1/messages header-add X-Stainless-Runtime "node"
+^https?://muyuan\.do/v1/messages header-add X-Stainless-Runtime-Version "v24.3.0"
+^https?://muyuan\.do/v1/messages header-add X-Stainless-Timeout "600"
+
+# Anthropic / Claude Code beta 头
+^https?://muyuan\.do/v1/messages header-del anthropic-beta
+^https?://muyuan\.do/v1/messages header-add anthropic-beta "claude-code-20250219,context-1m-2025-08-07,interleaved-thinking-2025-05-14,thinking-token-count-2026-05-13,context-management-2025-06-27,prompt-caching-scope-2026-01-05,mid-conversation-system-2026-04-07,advisor-tool-2026-03-01,effort-2025-11-24,structured-outputs-2025-12-15"
+^https?://muyuan\.do/v1/messages header-del anthropic-dangerous-direct-browser-access
+^https?://muyuan\.do/v1/messages header-add anthropic-dangerous-direct-browser-access "true"
+
+[MITM]
+hostname = muyuan.do
